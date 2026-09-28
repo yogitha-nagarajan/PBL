@@ -1,22 +1,6 @@
-# Core pipeline (required)
-numpy
-pandas
-scipy
-scikit-learn
+streamlit 
+pandas 
+numpy 
+scipy 
+scikit-learn 
 matplotlib
-
-# As specified in the project architecture (recommended — the pipeline
-# auto-detects these and uses them if present, falling back to the
-# scikit-learn equivalents in requirements-core.txt if they're missing)
-tensorflow>=2.15
-xgboost
-vaderSentiment
-transformers
-torch
-
-# Investor dashboard (stage 9)
-streamlit
-
-# Real market data / news (stage 1-2) — optional, needs internet + (for
-# Alpha Vantage) a free API key from alphavantage.co
-yfinance
