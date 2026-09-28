@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AI Investment Decision Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #0A0D12;
+    --bg-panel: #12161E;
+    --bg-panel-alt: #171D28;
+    --bg-inset: #0D1119;
+    --border: #262E3D;
+    --border-soft: #1C2330;
+    --text-primary: #E7ECF3;
+    --text-muted: #7C8798;
+    --text-dim: #545F70;
+    --up: #2FBF71;
+    --down: #E5484D;
+    --neutral: #D8A03D;
+    --line-price: #5B8DEF;
+    --line-alt: #9A7BE0;
+    --font-ui: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg-deep); color: var(--text-primary); font-family: var(--font-ui); -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1220px; margin: 0 auto; padding: 28px 24px 60px; }
+
+  header.top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 14px; padding-bottom: 18px; border-bottom: 1px solid var(--border); margin-bottom: 22px; }
+  .title-block h1 { margin: 0 0 4px; font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+  .title-block p { margin: 0; color: var(--text-muted); font-size: 12.5px; max-width: 560px; }
+  .stage-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .stage-pill { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); border: 1px solid var(--border-soft); border-radius: 10px; padding: 2px 8px; }
+
+  .grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 18px; align-items: stretch; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+  .panel { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; padding: 18px 20px 20px; }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 10px; flex-wrap: wrap; }
+  .panel-head h2 { margin: 0; font-size: 13.5px; font-weight: 600; }
+  .panel-head .sub { font-size: 11.5px; color: var(--text-dim); margin-top: 2px; }
+
+  table.snap { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 4px; }
+  table.snap th { text-align: left; font-weight: 500; color: var(--text-dim); font-size: 10.5px; padding: 0 8px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  table.snap td { padding: 8px 8px; border-bottom: 1px solid var(--border-soft); font-family: var(--font-mono); white-space: nowrap; }
+  table.snap td.sym { font-family: var(--font-ui); font-weight: 600; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-family: var(--font-mono); font-weight: 600; }
+  .pill.Up { background: rgba(47,191,113,0.15); color: var(--up); }
+  .pill.Down { background: rgba(229,72,77,0.15); color: var(--down); }
+  .pill.Positive { background: rgba(47,191,113,0.15); color: var(--up); }
+  .pill.Negative { background: rgba(229,72,77,0.15); color: var(--down); }
+  .pill.Neutral { background: rgba(216,160,61,0.15); color: var(--neutral); }
+  .pill.Low { background: rgba(47,191,113,0.12); color: var(--up); }
+  .pill.Medium { background: rgba(216,160,61,0.12); color: var(--neutral); }
+  .pill.High { background: rgba(229,72,77,0.12); color: var(--down); }
+
+  select { background: var(--bg-inset); color: var(--text-primary); border: 1px solid var(--border-soft); border-radius: 5px; font-family: var(--font-mono); font-size: 11px; padding: 5px 8px; }
+  svg.chart { width: 100%; height: 220px; display: block; }
+  .frontier-img { width: 100%; border-radius: 4px; display: block; margin-top: 4px; }
+
+  .risk-slider-row { margin-bottom: 6px; }
+  .risk-slider-row .labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); margin-bottom: 8px; font-family: var(--font-mono); }
+  .risk-slider-row .profile { font-size: 15px; font-weight: 600; margin-top: 6px; }
+  .profile.Conservative { color: var(--up); }
+  .profile.Balanced { color: var(--neutral); }
+  .profile.Aggressive { color: var(--down); }
+  input[type=range] { -webkit-appearance: none; width: 100%; height: 3px; background: var(--border); border-radius: 2px; outline: none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--line-price); cursor: pointer; border: 2px solid #0A0D12; }
+  input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--line-price); cursor: pointer; border: 2px solid #0A0D12; }
+
+  .rec-grid { display: grid; grid-template-columns: 1fr 1.3fr; gap: 20px; margin-top: 12px; align-items: center; }
+  @media (max-width: 700px) { .rec-grid { grid-template-columns: 1fr; } }
+  svg.pie { width: 100%; height: 220px; }
+  .rec-list { display: flex; flex-direction: column; gap: 8px; }
+  .rec-row { display: flex; align-items: center; gap: 10px; font-size: 12px; }
+  .rec-row .swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  .rec-row .sym { font-weight: 600; width: 52px; flex-shrink: 0; }
+  .rec-row .pct { font-family: var(--font-mono); width: 46px; flex-shrink: 0; }
+  .rec-row .why { color: var(--text-dim); font-size: 11px; }
+
+  footer.note { margin-top: 22px; font-size: 11.5px; color: var(--text-dim); line-height: 1.7; }
+  footer.note code { font-family: var(--font-mono); background: var(--bg-inset); padding: 1px 5px; border-radius: 3px; }
+  footer.note ul { margin: 6px 0 0; padding-left: 18px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="title-block">
+      <h1>AI-Powered Investment Decision Assistant</h1>
+      <p>All 9 pipeline stages from the project architecture, running on this page. Portfolio optimisation (Modern Portfolio Theory / Sharpe ratio blending) recomputes live as you move the risk slider.</p>
+      <div class="stage-pills">
+        <span class="stage-pill">1-2 Market Data</span>
+        <span class="stage-pill">3 Preprocessing</span>
+        <span class="stage-pill">4 XGBoost + LSTM</span>
+        <span class="stage-pill">5 VADER / FinBERT</span>
+        <span class="stage-pill">6 Risk Assessment</span>
+        <span class="stage-pill">7 Portfolio Optimization</span>
+        <span class="stage-pill">8 Recommendation</span>
+        <span class="stage-pill">9 Dashboard</span>
+      </div>
+    </div>
+  </header>
+
+  <section class="panel" style="margin-bottom:18px;">
+    <div class="panel-head">
+      <div><h2>Market snapshot</h2><div class="sub">Stage 4-6 output — prediction, sentiment, and risk per stock</div></div>
+    </div>
+    <table class="snap" id="snapTable"></table>
+  </section>
+
+  <div class="grid">
+    <section class="panel">
+      <div class="panel-head">
+        <div><h2>Price history</h2><div class="sub">Stage 1-3 — last 250 trading days</div></div>
+        <select id="symbolSelect"></select>
+      </div>
+      <svg class="chart" id="priceChart" viewBox="0 0 860 220" preserveAspectRatio="none"></svg>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div><h2>Efficient frontier</h2><div class="sub">Stage 7 — 8,000 simulated portfolios (Modern Portfolio Theory)</div></div>
+      </div>
+      <img class="frontier-img" id="frontierImg" alt="Efficient frontier plot">
+    </section>
+  </div>
+
+  <section class="panel" style="margin-top:18px;">
+    <div class="panel-head">
+      <div><h2>Your personalised recommendation</h2><div class="sub">Stage 8 — blends the Min-Volatility and Max-Sharpe portfolios by your risk tolerance, then nudges each stock by its prediction &amp; sentiment</div></div>
+    </div>
+    <div class="risk-slider-row">
+      <div class="labels"><span>Conservative</span><span>Balanced</span><span>Aggressive</span></div>
+      <input type="range" id="riskSlider" min="0" max="1" step="0.01" value="0.5">
+      <div class="profile" id="profileLabel">Balanced</div>
+    </div>
+    <div class="rec-grid">
+      <svg class="pie" id="pieChart" viewBox="0 0 200 200"></svg>
+      <div class="rec-list" id="recList"></div>
+    </div>
+  </section>
+
+  <footer class="note">
+    Stage 4 (prediction): a gradient-boosted classifier (XGBoost-family) predicts next-day direction (62% test accuracy on this synthetic dataset — realistic for short-horizon stock direction) and a neural network (LSTM-family) predicts next-day return magnitude.<br>
+    Stage 5 (sentiment): VADER-style lexicon scoring of ~2,500 synthetic financial headlines, aggregated per stock over the trailing 30 days.<br>
+    Stage 7 (optimisation): the risk slider above blends the real Max-Sharpe and Min-Volatility portfolios computed by <code>scipy.optimize</code> in Python, then applies the same prediction/sentiment nudge rule as <code>recommendation.py</code> — live, in JavaScript, in this page.<br>
+    This dashboard was generated from one run of the actual Python pipeline (<code>market_data.py</code> → … → <code>recommendation.py</code>); numbers will differ each time the pipeline is re-run on freshly simulated data.
+  </footer>
+
+</div>
+
+<script>
+const DATA = __BUNDLE_JSON__;
+
+/* ---------------- market snapshot table ---------------- */
+const snapTable = document.getElementById('snapTable');
+snapTable.innerHTML = `
+  <thead><tr>
+    <th>Symbol</th><th>Price</th><th>AI Prediction</th><th>Pred. Return</th>
+    <th>Sentiment</th><th>Risk Tier</th><th>Sharpe</th>
+  </tr></thead>
+  <tbody>
+    ${DATA.snapshot.map(r => `
+      <tr>
+        <td class="sym">${r.symbol}</td>
+        <td>$${r.close.toFixed(2)}</td>
+        <td><span class="pill ${r.predicted_direction}">${r.predicted_direction}</span></td>
+        <td>${(r.predicted_return*100).toFixed(2)}%</td>
+        <td><span class="pill ${r.mood}">${r.mood}</span> ${r.sentiment_score.toFixed(2)}</td>
+        <td><span class="pill ${r.risk_tier}">${r.risk_tier}</span></td>
+        <td>${r.sharpe_ratio.toFixed(2)}</td>
+      </tr>
+    `).join('')}
+  </tbody>
+`;
+
+/* ---------------- price chart ---------------- */
+const symbolSelect = document.getElementById('symbolSelect');
+symbolSelect.innerHTML = DATA.symbols.map(s => `<option value="${s}">${s}</option>`).join('');
+const priceChartEl = document.getElementById('priceChart');
+
+function drawPriceChart(symbol) {
+  const series = DATA.prices[symbol];
+  const W = 860, H = 220, padL = 4, padR = 4, padT = 10, padB = 10;
+  const n = series.length;
+  const closes = series.map(d => d.close);
+  const lo = Math.min(...closes), hi = Math.max(...closes);
+  const span = (hi - lo) || 1;
+  const x = i => padL + (i / (n - 1)) * (W - padL - padR);
+  const y = v => padT + (1 - (v - lo) / span) * (H - padT - padB);
+  const path = series.map((d, i) => `${i === 0 ? 'M' : 'L'} ${x(i).toFixed(1)} ${y(d.close).toFixed(1)}`).join(' ');
+  const area = path + ` L ${x(n-1).toFixed(1)} ${H-padB} L ${x(0).toFixed(1)} ${H-padB} Z`;
+  priceChartEl.innerHTML = `
+    <path d="${area}" fill="var(--line-price)" opacity="0.10" stroke="none"/>
+    <path d="${path}" fill="none" stroke="var(--line-price)" stroke-width="1.6"/>
+  `;
+}
+symbolSelect.addEventListener('change', e => drawPriceChart(e.target.value));
+drawPriceChart(DATA.symbols[0]);
+
+/* ---------------- efficient frontier image ---------------- */
+document.getElementById('frontierImg').src = 'data:image/png;base64,' + DATA.frontierImage;
+
+/* ---------------- live portfolio blend + recommendation ---------------- */
+const riskSlider = document.getElementById('riskSlider');
+const profileLabel = document.getElementById('profileLabel');
+const pieChart = document.getElementById('pieChart');
+const recList = document.getElementById('recList');
+
+const COLORS = ['#5B8DEF', '#2FBF71', '#D8A03D', '#9A7BE0', '#E5484D', '#4FD1C5', '#F0A6CA'];
+
+function profileName(t) {
+  if (t < 0.33) return 'Conservative';
+  if (t < 0.66) return 'Balanced';
+  return 'Aggressive';
+}
+
+function computeRecommendation(riskTolerance) {
+  const symbols = DATA.symbols;
+  const base = {};
+  symbols.forEach(s => {
+    base[s] = (1 - riskTolerance) * DATA.anchors.minVol[s] + riskTolerance * DATA.anchors.maxSharpe[s];
+  });
+
+  const snapshotBySymbol = {};
+  DATA.snapshot.forEach(r => snapshotBySymbol[r.symbol] = r);
+
+  const DIRECTION_NUDGE = 0.03;
+  const SENTIMENT_NUDGE_SCALE = 0.02;
+  const adjusted = {};
+  symbols.forEach(s => {
+    let w = base[s];
+    const row = snapshotBySymbol[s];
+    if (row) {
+      w += (row.predicted_direction === 'Up' ? DIRECTION_NUDGE : -DIRECTION_NUDGE);
+      w += row.sentiment_score * SENTIMENT_NUDGE_SCALE;
+    }
+    adjusted[s] = Math.max(0, w);
+  });
+  const total = Object.values(adjusted).reduce((a, b) => a + b, 0);
+  symbols.forEach(s => adjusted[s] = adjusted[s] / total);
+  return adjusted;
+}
+
+function renderRecommendation() {
+  const t = parseFloat(riskSlider.value);
+  const profile = profileName(t);
+  profileLabel.textContent = `${profile} investor (risk tolerance = ${t.toFixed(2)})`;
+  profileLabel.className = 'profile ' + profile;
+
+  const weights = computeRecommendation(t);
+  const snapshotBySymbol = {};
+  DATA.snapshot.forEach(r => snapshotBySymbol[r.symbol] = r);
+
+  const sorted = Object.entries(weights).sort((a, b) => b[1] - a[1]);
+
+  // pie chart
+  let cumAngle = -Math.PI / 2;
+  const cx = 100, cy = 100, r = 90;
+  let pieSvg = '';
+  sorted.forEach(([sym, w], i) => {
+    const angle = w * 2 * Math.PI;
+    const x1 = cx + r * Math.cos(cumAngle), y1 = cy + r * Math.sin(cumAngle);
+    cumAngle += angle;
+    const x2 = cx + r * Math.cos(cumAngle), y2 = cy + r * Math.sin(cumAngle);
+    const largeArc = angle > Math.PI ? 1 : 0;
+    pieSvg += `<path d="M ${cx} ${cy} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${largeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z" fill="${COLORS[i % COLORS.length]}" opacity="0.88"/>`;
+  });
+  pieChart.innerHTML = pieSvg;
+
+  // list
+  recList.innerHTML = sorted.map(([sym, w], i) => {
+    const row = snapshotBySymbol[sym];
+    return `
+      <div class="rec-row">
+        <span class="swatch" style="background:${COLORS[i % COLORS.length]}"></span>
+        <span class="sym">${sym}</span>
+        <span class="pct">${(w*100).toFixed(1)}%</span>
+        <span class="why">predicts ${row.predicted_direction}, ${row.mood.toLowerCase()} sentiment, ${row.risk_tier.toLowerCase()} risk</span>
+      </div>
+    `;
+  }).join('');
+}
+
+riskSlider.addEventListener('input', renderRecommendation);
+renderRecommendation();
+</script>
+</body>
+</html>
